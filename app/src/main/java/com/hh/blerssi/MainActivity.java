@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<NSDevice> mDeviceList = new ArrayList<>();
     private HashMap<String, NSDevice> mDeviceMap = new HashMap<>();
     private MainAdapter mAdapter;
+    private String mFilterString = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,6 +128,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mEtFilter.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if(editable.toString() !=null && editable.toString().length() > 0){
+                    mFilterString = editable.toString();
+                }
+            }
+        });
+
         initRecycleView();
     }
 
@@ -163,15 +183,12 @@ public class MainActivity extends AppCompatActivity {
             Map.Entry entry = (Map.Entry) iter.next();
             NSDevice val = (NSDevice) entry.getValue();
 
-//            //测试标签
-//            if(val.getAddress().contains("FF:FF:FF:01:87:AE")
-//                    || val.getAddress().contains("FF:FF:FF:01:87:AF")) {
-//                mDeviceList.add(val);
-//            }
-            mDeviceList.add(val);
+            if(val.getAddress().contains(mFilterString)) {
+                mDeviceList.add(val);
+            }
         }
 
-//        Collections.sort(mDeviceList, (arg0, arg1) -> arg1.getRssi().compareTo(arg0.getRssi()));
+        Collections.sort(mDeviceList, (arg0, arg1) -> arg1.getRssi().compareTo(arg0.getRssi()));
 
         mAdapter.setData(mDeviceList);
         mAdapter.notifyDataSetChanged();
@@ -207,13 +224,13 @@ public class MainActivity extends AppCompatActivity {
     private void scanLeDevice(final boolean start) {
         if (start) {
             if (mBluetoothAdapter != null) {
-//                mBluetoothAdapter.startLeScan(mLeScanCallback);
-                mBluetoothAdapter.getBluetoothLeScanner().startScan(mScanCallback);
+                mBluetoothAdapter.startLeScan(mLeScanCallback);
+//                mBluetoothAdapter.getBluetoothLeScanner().startScan(mScanCallback);
             }
         } else {
             if (mBluetoothAdapter != null) {
-//                mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                mBluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
+                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+//                mBluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
             }
         }
         invalidateOptionsMenu();
