@@ -3,6 +3,8 @@ package com.hh.blerssi;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -26,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -168,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
             mDeviceList.add(val);
         }
 
-        Collections.sort(mDeviceList, (arg0, arg1) -> arg1.getRssi().compareTo(arg0.getRssi()));
+//        Collections.sort(mDeviceList, (arg0, arg1) -> arg1.getRssi().compareTo(arg0.getRssi()));
 
         mAdapter.setData(mDeviceList);
         mAdapter.notifyDataSetChanged();
@@ -204,11 +207,13 @@ public class MainActivity extends AppCompatActivity {
     private void scanLeDevice(final boolean start) {
         if (start) {
             if (mBluetoothAdapter != null) {
-                mBluetoothAdapter.startLeScan(mLeScanCallback);
+//                mBluetoothAdapter.startLeScan(mLeScanCallback);
+                mBluetoothAdapter.getBluetoothLeScanner().startScan(mScanCallback);
             }
         } else {
             if (mBluetoothAdapter != null) {
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+//                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                mBluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
             }
         }
         invalidateOptionsMenu();
@@ -217,25 +222,61 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    String address = device.getAddress(); //获取蓝牙设备mac地址
-                    String name = device.getName();  //获取蓝牙设备名字
+            runOnUiThread(() -> {
+                String address = device.getAddress(); //获取蓝牙设备mac地址
+                String name = device.getName();  //获取蓝牙设备名字
 
-                    NSDevice deviceEntity = new NSDevice();
-                    deviceEntity.setAddress(address);
-                    deviceEntity.setName(name);
-                    deviceEntity.setRssi(rssi);
+                NSDevice deviceEntity = new NSDevice();
+                deviceEntity.setAddress(address);
+                deviceEntity.setName(name);
+                deviceEntity.setRssi(rssi);
 
-                    double distance = RssiUtil.getDistance(rssi);
-                    Log.d(TAG, "distance: " + String.valueOf(distance));
+                double distance = RssiUtil.getDistance(rssi);
+                Log.d(TAG, "distance: " + String.valueOf(distance));
 
+                if(distance > 3){
+                    mDeviceMap.remove(address);
+                }else {
                     mDeviceMap.put(deviceEntity.getAddress(), deviceEntity);
-
-                    refreshDeviceList();
                 }
+
+                refreshDeviceList();
             });
+        }
+    };
+
+    private ScanCallback mScanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            super.onScanResult(callbackType, result);
+
+            String address = result.getDevice().getAddress(); //获取蓝牙设备mac地址
+            String name = result.getDevice().getName();  //获取蓝牙设备名字
+
+            NSDevice deviceEntity = new NSDevice();
+            deviceEntity.setAddress(address);
+            deviceEntity.setName(name);
+            deviceEntity.setRssi(result.getRssi());
+
+            double distance = RssiUtil.getDistance(result.getRssi());
+            Log.d(TAG, "distance: " + String.valueOf(distance));
+
+            if(distance > 3){
+                mDeviceMap.remove(address);
+            }else {
+                mDeviceMap.put(deviceEntity.getAddress(), deviceEntity);
+            }
+            refreshDeviceList();
+        }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            super.onScanFailed(errorCode);
         }
     };
 }
