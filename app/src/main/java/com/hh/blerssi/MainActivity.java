@@ -7,6 +7,7 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -19,6 +20,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.content.Context;
 
 import com.yanzhenjie.permission.AndPermission;
 import com.yanzhenjie.permission.Permission;
@@ -55,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         initView();
         askBle();
         requestPermission();
+        enableWifi(false);
     }
 
     @Override
@@ -68,6 +71,12 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         scanLeDevice(false);
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        enableWifi(true);
     }
 
     @Override
@@ -194,6 +203,14 @@ public class MainActivity extends AppCompatActivity {
         mAdapter.notifyDataSetChanged();
     }
 
+    private void enableWifi(boolean enable){
+        WifiManager wifiManager = (WifiManager) this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (wifiManager.isWifiEnabled()) {
+            wifiManager.setWifiEnabled(false);
+        } else {
+            wifiManager.setWifiEnabled(true);
+        }
+    }
 
     private void askBle() {
         // 检查当前手机是否支持ble 蓝牙,如果不支持退出程序
@@ -224,13 +241,13 @@ public class MainActivity extends AppCompatActivity {
     private void scanLeDevice(final boolean start) {
         if (start) {
             if (mBluetoothAdapter != null) {
-                mBluetoothAdapter.startLeScan(mLeScanCallback);
-//                mBluetoothAdapter.getBluetoothLeScanner().startScan(mScanCallback);
+//                mBluetoothAdapter.startLeScan(mLeScanCallback);
+                mBluetoothAdapter.getBluetoothLeScanner().startScan(mScanCallback);
             }
         } else {
             if (mBluetoothAdapter != null) {
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
-//                mBluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
+//                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                mBluetoothAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
             }
         }
         invalidateOptionsMenu();
@@ -258,6 +275,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 refreshDeviceList();
+//                mBluetoothAdapter.getBluetoothLeScanner().flushPendingScanResults(mScanCallback);
+
             });
         }
     };
